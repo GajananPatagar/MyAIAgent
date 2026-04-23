@@ -19,11 +19,36 @@ jobs:
       - name: Download and Prepare Engine
         shell: powershell
         run: |
+          # 1. Setup Folder
           if (!(Test-Path "bin")) { New-Item -ItemType Directory -Path "bin" -Force }
+          
+          # 2. Robust Download with Retry Logic
           $url = "https://github.com/ggerganov/llama.cpp/releases/download/b3000/llama-b3000-bin-win-vulkan-x64.zip"
-          curl.exe -L -o engine.zip $url
+          $maxRetries = 3
+          $retryCount = 0
+          $success = $false
+
+          while (-not $success -and $retryCount -lt $maxRetries) {
+              try {
+                  Write-Host "Attempting download (Attempt $($retryCount + 1))..."
+                  curl.exe -L -o engine.zip $url
+                  $success = $true
+              } catch {
+                  $retryCount++
+                  Start-Sleep -Seconds 5
+              }
+          }
+
+          # 3. Native Windows Extraction
+          Write-Host "Extracting engine..."
           Expand-Archive -Path "engine.zip" -DestinationPath "bin" -Force
-          if (!(Test-Path "bin\llama-cli.exe")) { throw "Engine not found!" }
+          
+          # 4. Verify
+          if (Test-Path "bin\llama-cli.exe") {
+              Write-Host "Success: Engine is ready."
+          } else {
+              throw "Critical Error: Engine extraction failed."
+          }
 
       - name: Build Software EXE
         run: pyinstaller --onefile --noconsole --name "AIAgent_Internal" src/main.py
