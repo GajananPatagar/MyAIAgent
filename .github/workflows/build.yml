@@ -19,21 +19,21 @@ jobs:
       - name: Download and Unzip Engine
         shell: powershell
         run: |
-          # 1. Create bin directory
-          if (!(Test-Path "bin")) { New-Item -ItemType Directory -Path "bin" }
+          # 1. Create bin directory if it doesn't exist
+          if (!(Test-Path "bin")) { New-Item -ItemType Directory -Path "bin" -Force }
           
-          # 2. Download the engine using PowerShell (more reliable for Windows ZIPs)
+          # 2. Download with curl (highly reliable)
           $url = "https://github.com/ggerganov/llama.cpp/releases/download/b3000/llama-b3000-bin-win-vulkan-x64.zip"
-          Invoke-WebRequest -Uri $url -OutFile "engine.zip"
+          curl.exe -L -o engine.zip $url
           
-          # 3. Extract using PowerShell native Expand-Archive
+          # 3. Use PowerShell native Expand-Archive (Fixes the 'Unrecognized format' error)
           Expand-Archive -Path "engine.zip" -DestinationPath "bin" -Force
           
-          # 4. Verify extraction
+          # 4. Verify the executable is there
           if (Test-Path "bin\llama-cli.exe") {
-              Write-Host "Success: llama-cli.exe found in bin folder."
+              Write-Host "Success: llama-cli.exe is ready."
           } else {
-              Write-Error "Failure: llama-cli.exe not found after extraction."
+              Write-Error "Critical Error: llama-cli.exe was not found."
               exit 1
           }
 
