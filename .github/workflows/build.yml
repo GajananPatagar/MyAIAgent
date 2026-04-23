@@ -17,22 +17,32 @@ jobs:
         run: pip install pyinstaller pyautogui Pillow requests
 
       - name: Download and Unzip Engine
+        shell: powershell
         run: |
-          mkdir bin
-          # Using curl for guaranteed network access on GitHub Runners
-          curl -L -o engine.zip https://github.com/ggerganov/llama.cpp/releases/download/b3000/llama-b3000-bin-win-vulkan-x64.zip
+          # 1. Create bin directory
+          if (!(Test-Path "bin")) { New-Item -ItemType Directory -Path "bin" }
           
-          # Use Windows native tar to extract the zip into the bin folder
-          tar -xf engine.zip -C bin/
+          # 2. Download the engine using PowerShell (more reliable for Windows ZIPs)
+          $url = "https://github.com/ggerganov/llama.cpp/releases/download/b3000/llama-b3000-bin-win-vulkan-x64.zip"
+          Invoke-WebRequest -Uri $url -OutFile "engine.zip"
+          
+          # 3. Extract using PowerShell native Expand-Archive
+          Expand-Archive -Path "engine.zip" -DestinationPath "bin" -Force
+          
+          # 4. Verify extraction
+          if (Test-Path "bin\llama-cli.exe") {
+              Write-Host "Success: llama-cli.exe found in bin folder."
+          } else {
+              Write-Error "Failure: llama-cli.exe not found after extraction."
+              exit 1
+          }
 
       - name: Build Software EXE
         run: |
-          # Packaging your Python script into a professional EXE
           pyinstaller --onefile --noconsole --name "AIAgent_Internal" src/main.py
 
       - name: Create Installer (Inno Setup)
         run: |
-          # This compiles the .iss script into the final Setup.exe
           iscc /dAppVersion="1.0" /dAppExeName="AIAgent_Internal.exe" installer_script.iss
 
       - name: Upload Professional Installer
