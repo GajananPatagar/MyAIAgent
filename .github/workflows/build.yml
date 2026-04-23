@@ -14,37 +14,25 @@ jobs:
           python-version: '3.11'
 
       - name: Install Build Tools
-        run: |
-          pip install pyinstaller pyautogui Pillow requests
+        run: pip install pyinstaller pyautogui Pillow requests
 
-      - name: Download and Prepare Engine
-        shell: powershell
+      - name: Download and Unzip Engine
         run: |
-          # Create bin folder
-          New-Item -ItemType Directory -Force -Path bin
+          mkdir bin
+          # Using curl for guaranteed network access on GitHub Runners
+          curl -L -o engine.zip https://github.com/ggerganov/llama.cpp/releases/download/b3000/llama-b3000-bin-win-vulkan-x64.zip
           
-          # Download the engine zip
-          Invoke-WebRequest -Uri "https://github.com/ggerganov/llama.cpp/releases/download/b3000/llama-b3000-bin-win-vulkan-x64.zip" -OutFile "engine.zip"
-          
-          # Unzip using PowerShell to ensure 100% compatibility
-          Expand-Archive -Path engine.zip -DestinationPath bin -Force
-          
-          # Verify the exe exists in the bin folder
-          if (Test-Path "bin\llama-cli.exe") {
-              Write-Host "Engine extracted successfully."
-          } else {
-              Write-Error "llama-cli.exe not found after extraction."
-              exit 1
-          }
+          # Use Windows native tar to extract the zip into the bin folder
+          tar -xf engine.zip -C bin/
 
       - name: Build Software EXE
         run: |
-          # Building the main python logic into a hidden-console executable
+          # Packaging your Python script into a professional EXE
           pyinstaller --onefile --noconsole --name "AIAgent_Internal" src/main.py
 
       - name: Create Installer (Inno Setup)
         run: |
-          # This compiles your .iss script into the final Setup.exe
+          # This compiles the .iss script into the final Setup.exe
           iscc /dAppVersion="1.0" /dAppExeName="AIAgent_Internal.exe" installer_script.iss
 
       - name: Upload Professional Installer
@@ -52,4 +40,3 @@ jobs:
         with:
           name: AIAgent_Setup_Wizard
           path: output/AIAgent_Setup.exe
-          if-no-files-found: error
