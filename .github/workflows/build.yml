@@ -1,4 +1,4 @@
-name: Build Pro Agent
+name: Create Windows Installer
 on: [push]
 
 jobs:
@@ -6,30 +6,20 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+      - name: Install PyInstaller
+        run: pip install pyinstaller pyautogui
 
-      - name: Install Tools
-        run: pip install pyinstaller pyautogui Pillow
-
-      - name: Create Structure & Get Model
+      - name: Build Software EXE
         run: |
-          mkdir -p package/engine/models
-          # 15GB Intelligence Model (Qwen2.5-VL 7B BF16 / Llama 3.2 11B Vision)
-          curl -L -o package/engine/models/brain.gguf https://huggingface.co/unsloth/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-BF16.gguf
-          # Get Windows Llama Engine
-          curl -L -o package/engine/llama-cli.exe https://github.com/ggerganov/llama.cpp/releases/download/b3000/llama-b3000-bin-win-vulkan-x64.zip
+          pyinstaller --onefile --noconsole --name "AIAgent_Internal" src/main.py
 
-      - name: Build Code Only
+      - name: Create Installer (Inno Setup)
         run: |
-          # We build the EXE without embedding the 15GB model inside it (keeps it lightweight)
-          pyinstaller --onefile --noconsole --name "AIAgent" src/main.py
-          cp dist/AIAgent.exe package/
+          # This creates the professional 'Setup.exe'
+          iscc /dAppVersion="1.0" /dAppExeName="AIAgent_Internal.exe" installer_script.iss
 
-      - name: Upload Finished Package
+      - name: Upload Installer
         uses: actions/upload-artifact@v4
         with:
-          name: AI-Agent-Professional-Package
-          path: package/
+          name: AIAgent_Setup_Wizard
+          path: output/setup.exe
