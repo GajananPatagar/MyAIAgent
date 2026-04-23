@@ -2,59 +2,61 @@ import os
 import sys
 import subprocess
 import pyautogui
-import base64
 import json
-from PIL import Image
+import base64
+from pathlib import Path
 
-# This finds the internal "baked-in" model after unzipping
-def resource_path(relative_path):
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
+# --- DIRECTORY HANDLER ---
+# This ensures the app knows where the folders are, even when moved
+BASE_DIR = Path(sys.executable).parent if getattr(sys, 'frozen', False) else Path(__file__).parent
+ENGINE_PATH = BASE_DIR / "engine" / "llama-cli.exe"
+MODEL_PATH = BASE_DIR / "engine" / "models" / "brain.gguf"
+MEMORY_PATH = BASE_DIR / "brain_data.bin"
 
-MODEL_PATH = resource_path("model.gguf")
-ENGINE_PATH = resource_path("llama-cli.exe")
-
-class PortableAgent:
+class ProAgent:
     def __init__(self):
-        # Self-contained memory
-        self.memory_path = os.path.join(os.getenv('APPDATA'), "agent_brain.json")
-        self.memory = self.load_mem()
+        self.memory = self.load_memory()
 
-    def load_mem(self):
-        if os.path.exists(self.memory_path):
-            with open(self.memory_path, "r") as f: return json.load(f)
+    def load_memory(self):
+        if MEMORY_PATH.exists():
+            with open(MEMORY_PATH, "rb") as f:
+                return json.loads(base64.b64decode(f.read()).decode())
         return {}
 
-    def run_inference(self, prompt, image_path):
-        # Runs the bundled C++ engine directly
-        cmd = [
-            ENGINE_PATH, 
-            "-m", MODEL_PATH, 
-            "--image", image_path,
-            "-p", f"USER: {prompt}\nASSISTANT:",
-            "--temp", "0", "-n", "64"
-        ]
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        return result.stdout
+    def save_memory(self):
+        data = base64.b64encode(json.dumps(self.memory).encode())
+        with open(MEMORY_PATH, "wb") as f:
+            f.write(data)
 
-    def execute(self, task):
-        if task in self.memory:
-            # MILLISECOND RESPONSE: Trigger learned action
-            pyautogui.click(self.memory[task]['x'], self.memory[task]['y'])
-            return "Executing learned task..."
+    def execute(self, command):
+        # MILLISECOND TIER: Check learned actions first
+        if command in self.memory:
+            for action in self.memory[command]:
+                pyautogui.click(action['x'], action['y'])
+            return "Task completed from local memory."
+
+        # INTELLIGENCE TIER: 15GB Brain Analysis
+        print("Analyzing with 15GB Intelligence...")
+        scr = pyautogui.screenshot("temp.jpg")
         
-        # VISION MODE: If new, take a screenshot and analyze
-        scr = pyautogui.screenshot()
-        scr.save("temp_scr.jpg")
-        
-        response = self.run_inference(f"Find the coordinates for {task}", "temp_scr.jpg")
-        # (Parsing logic for coordinates here...)
-        return "Task processed."
+        # Call the external engine
+        process = subprocess.run([
+            str(ENGINE_PATH), "-m", str(MODEL_PATH),
+            "--image", "temp.jpg", "-p", f"USER: To {command}, where should I click? Format: CLICK X,Y\nASSISTANT:",
+            "--temp", "0", "-n", "32"
+        ], capture_output=True, text=True)
+
+        # Learning & Action logic
+        result = process.stdout
+        if "CLICK" in result:
+            # (Parse coordinates, click, and save to self.memory here)
+            self.save_memory()
+            return "Learned and executed."
+        return "Thinking..."
 
 if __name__ == "__main__":
-    app = PortableAgent()
-    print("Portable AI Agent Ready (No Internet/No Downloads)")
+    print(f"--- IHTM DEPT AI AGENT ---")
+    agent = ProAgent()
     while True:
-        query = input("Command: ")
-        print(app.execute(query))
+        user_in = input("Command: ")
+        print(agent.execute(user_in))

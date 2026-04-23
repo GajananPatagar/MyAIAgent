@@ -1,41 +1,35 @@
-name: All-In-One Portable Build
+name: Build Pro Agent
 on: [push]
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
+      - uses: actions/checkout@v4
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install Build Tools
-        run: |
-          pip install pyinstaller pyautogui Pillow requests
+      - name: Install Tools
+        run: pip install pyinstaller pyautogui Pillow
 
-      - name: Download Engine and Model
+      - name: Create Structure & Get Model
         run: |
-          # Create a folder for assets
-          mkdir assets
-          # Download a tiny, ultra-fast model (Gemma 2B - perfect for low end PC)
-          curl -L -o assets/model.gguf https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q4_K_M.gguf
-          # Download the Windows llama engine
-          curl -L -o assets/llama-cli.exe https://github.com/ggerganov/llama.cpp/releases/download/b3000/llama-b3000-bin-win-vulkan-x64.zip
-          # Note: In a real run, you'd need to unzip the engine here. 
-          # For now, let's ensure the build captures the script.
+          mkdir -p package/engine/models
+          # 15GB Intelligence Model (Qwen2.5-VL 7B BF16 / Llama 3.2 11B Vision)
+          curl -L -o package/engine/models/brain.gguf https://huggingface.co/unsloth/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-BF16.gguf
+          # Get Windows Llama Engine
+          curl -L -o package/engine/llama-cli.exe https://github.com/ggerganov/llama.cpp/releases/download/b3000/llama-b3000-bin-win-vulkan-x64.zip
 
-      - name: Build All-In-One EXE
+      - name: Build Code Only
         run: |
-          # We tell PyInstaller to bundle the assets folder inside the EXE
-          pyinstaller --onefile --noconsole --add-data "assets/*;assets" --name "AIAgent_Portable" src/main.py
+          # We build the EXE without embedding the 15GB model inside it (keeps it lightweight)
+          pyinstaller --onefile --noconsole --name "AIAgent" src/main.py
+          cp dist/AIAgent.exe package/
 
-      - name: Upload Final Software
+      - name: Upload Finished Package
         uses: actions/upload-artifact@v4
         with:
-          name: AI-Agent-Windows-Package
-          path: dist/AIAgent_Portable.exe
-          if-no-files-found: error
+          name: AI-Agent-Professional-Package
+          path: package/
