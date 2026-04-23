@@ -1,0 +1,28 @@
+name: Build Windows Agent
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install pyinstaller pyautogui requests Pillow
+
+      - name: Build Executable
+        run: |
+          pyinstaller --onefile --noconsole --name "AIAgent" src/main.py
+
+      - name: Upload Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI-Agent-Windows
+          path: dist/AIAgent.exe
