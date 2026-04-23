@@ -6,8 +6,23 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Install PyInstaller
-        run: pip install pyinstaller pyautogui
+        run: pip install pyinstaller pyautogui Pillow requests
+
+      - name: Download Engine
+        run: |
+          mkdir bin
+          # Download the llama engine zip
+          curl -L -o engine.zip https://github.com/ggerganov/llama.cpp/releases/download/b3000/llama-b3000-bin-win-vulkan-x64.zip
+          # Unzip it and move the exe to the bin folder
+          tar -xf engine.zip
+          mv llama-cli.exe bin/
 
       - name: Build Software EXE
         run: |
@@ -15,11 +30,11 @@ jobs:
 
       - name: Create Installer (Inno Setup)
         run: |
-          # This creates the professional 'Setup.exe'
+          # Now bin\llama-cli.exe exists, so this won't fail
           iscc /dAppVersion="1.0" /dAppExeName="AIAgent_Internal.exe" installer_script.iss
 
       - name: Upload Installer
         uses: actions/upload-artifact@v4
         with:
           name: AIAgent_Setup_Wizard
-          path: output/setup.exe
+          path: output/AIAgent_Setup.exe

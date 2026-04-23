@@ -17,5 +17,5 @@ Name: "{group}\AIAgent Pro"; Filename: "{app}\AIAgent_Internal.exe"
 Name: "{autodesktop}\AIAgent Pro"; Filename: "{app}\AIAgent_Internal.exe"
 
 [Run]
-; This command downloads the 40GB brain during the final step of installation
-Filename: "powershell.exe"; Parameters: "-Command Invoke-WebRequest -Uri 'https://huggingface.co/MaziyarPanahi/Llama-3.1-70B-Instruct-GGUF/resolve/main/Llama-3.1-70B-Instruct-Q4_K_M.gguf' -OutFile 'C:\AI_Data\Models\heavy_brain_40gb.gguf'"; StatusMsg: "Downloading 40GB Intelligence Brain (This may take time)..."
+; Downloads the 40GB brain to the local machine during installation
+Filename: "powershell.exe"; Parameters: "-Command ""New-Item -ItemType Directory -Force -Path C:\AI_Data\Models; Invoke-WebRequest -Uri 'https://huggingface.co/MaziyarPanahi/Llama-3.1-70B-Instruct-GGUF/resolve/main/Llama-3.1-70B-Instruct-Q4_K_M.gguf' -OutFile 'C:\AI_Data\Models\heavy_brain_40gb.gguf'"""; StatusMsg: "Downloading 40GB Intelligence Brain (This may take an hour)..."
