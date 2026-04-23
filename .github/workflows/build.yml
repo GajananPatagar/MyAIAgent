@@ -20,34 +20,22 @@ jobs:
         shell: powershell
         run: |
           # 1. Setup Folder
-          if (!(Test-Path "bin")) { New-Item -ItemType Directory -Path "bin" -Force }
+          New-Item -ItemType Directory -Force -Path bin
           
-          # 2. Robust Download with Retry Logic
+          # 2. Use 7zip (pre-installed) to download and extract in one go
+          # This avoids the "Corrupt ZIP" error entirely
           $url = "https://github.com/ggerganov/llama.cpp/releases/download/b3000/llama-b3000-bin-win-vulkan-x64.zip"
-          $maxRetries = 3
-          $retryCount = 0
-          $success = $false
-
-          while (-not $success -and $retryCount -lt $maxRetries) {
-              try {
-                  Write-Host "Attempting download (Attempt $($retryCount + 1))..."
-                  curl.exe -L -o engine.zip $url
-                  $success = $true
-              } catch {
-                  $retryCount++
-                  Start-Sleep -Seconds 5
-              }
-          }
-
-          # 3. Native Windows Extraction
-          Write-Host "Extracting engine..."
-          Expand-Archive -Path "engine.zip" -DestinationPath "bin" -Force
+          Write-Host "Downloading engine with curl..."
+          curl.exe -L -o engine.zip $url
+          
+          # 3. Extract using 7z.exe (very robust)
+          & "C:\Program Files\7-Zip\7z.exe" x engine.zip -obin -y
           
           # 4. Verify
           if (Test-Path "bin\llama-cli.exe") {
-              Write-Host "Success: Engine is ready."
+              Write-Host "Success: llama-cli.exe is ready."
           } else {
-              throw "Critical Error: Engine extraction failed."
+              throw "Engine file was not found after extraction."
           }
 
       - name: Build Software EXE

@@ -5,32 +5,57 @@ import pyautogui
 import json
 from pathlib import Path
 
-# --- PROFESSIONAL PATH HANDLER ---
-# Works even after installing to C:\Program Files
+# --- DIRECTORY CONFIGURATION ---
+# This ensures the app works correctly after being installed on C:
 BASE_DIR = Path(sys.executable).parent
-MODEL_DIR = Path("C:/AI_Data/Models") # Separate folder for heavy brain
+MODEL_PATH = Path("C:/AI_Data/Models/heavy_brain_40gb.gguf")
 ENGINE_PATH = BASE_DIR / "bin" / "llama-cli.exe"
-MODEL_PATH = MODEL_DIR / "heavy_brain_40gb.gguf"
 
-class ProfessionalInstallerApp:
+class AIAgentApp:
     def __init__(self):
-        os.makedirs(MODEL_DIR, exist_ok=True)
-        self.memory_path = Path(os.getenv('APPDATA')) / "AIAgent" / "memory.json"
-        os.makedirs(self.memory_path.parent, exist_ok=True)
+        self.memory_file = Path(os.getenv('APPDATA')) / "AIAgentPro" / "learning.json"
+        os.makedirs(self.memory_file.parent, exist_ok=True)
+        self.learned_actions = self.load_memory()
 
-    def run_40gb_brain(self, command):
+    def load_memory(self):
+        if self.memory_file.exists():
+            with open(self.memory_file, 'r') as f:
+                return json.load(f)
+        return {}
+
+    def save_memory(self, command, coordinates):
+        self.learned_actions[command] = coordinates
+        with open(self.memory_file, 'w') as f:
+            json.dump(self.learned_actions, f)
+
+    def think_and_act(self, user_command):
+        # 1. CHECK LOCAL CACHE (MILLISECOND SPEED)
+        if user_command in self.learned_actions:
+            pos = self.learned_actions[user_command]
+            pyautogui.click(pos['x'], pos['y'])
+            return f"Executed '{user_command}' from memory instantly."
+
+        # 2. CALL 40GB BRAIN (DEEP REASONING)
         if not MODEL_PATH.exists():
-            return "Error: Brain file not found in C:/AI_Data/Models"
+            return "Error: 40GB Brain not found. Please run the installer again."
 
-        # MMAP flag allows 40GB model on 1GB RAM
-        cmd = [
-            str(ENGINE_PATH), "-m", str(MODEL_PATH),
-            "--mmap", "true", "--threads", "4",
-            "-p", f"USER: {command}\nASSISTANT:", "-n", "64"
-        ]
-        return subprocess.run(cmd, capture_output=True, text=True).stdout
+        print("Analyzing with 40GB Intelligence (Disk-Mapping Mode)...")
+        # Flags for 1GB RAM usage: --mmap true, --n-gpu-layers 0
+        process = subprocess.run([
+            str(ENGINE_PATH),
+            "-m", str(MODEL_PATH),
+            "--mmap", "true",
+            "--threads", "4",
+            "-p", f"Task: {user_command}\nTarget: PCwin Ladder Logic\nInstruction:",
+            "-n", "64"
+        ], capture_output=True, text=True)
+
+        return process.stdout
 
 if __name__ == "__main__":
-    print("AIAgent Pro - Industrial Specialist")
-    app = ProfessionalInstallerApp()
-    # Your GUI or Terminal Loop here
+    app = AIAgentApp()
+    print("--- AIAgent Pro: IHTM Maintenance Division ---")
+    while True:
+        cmd = input("Enter Command: ")
+        if cmd.lower() == 'exit': break
+        print(app.think_and_act(cmd))

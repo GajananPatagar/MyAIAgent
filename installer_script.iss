@@ -27,7 +27,7 @@ Filename: "powershell.exe"; \
         Import-Module BitsTransfer; \
         Start-BitsTransfer -Source 'https://huggingface.co/MaziyarPanahi/Llama-3.1-70B-Instruct-GGUF/resolve/main/Llama-3.1-70B-Instruct-Q4_K_M.gguf' -Destination 'C:\AI_Data\Models\heavy_brain_40gb.gguf'; \
     }"""; \
-    StatusMsg: "Downloading 40GB Intelligence Brain. Please wait..."; \
+    StatusMsg: "Downloading 40GB Intelligence Brain. This is a massive file, please do not close the installer..."; \
     Flags: runhidden
 
 [UninstallDelete]
