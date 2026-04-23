@@ -1,20 +1,16 @@
 [Setup]
 AppName=AIAgent Pro
 AppVersion=1.0
-AppPublisher=IHTM Maintenance
 DefaultDirName={autopf}\AIAgent
 DefaultGroupName=AIAgent Pro
 OutputDir=output
 OutputBaseFilename=AIAgent_Setup
 Compression=lzma
 SolidCompression=yes
-; Request 45GB total space (40GB Brain + buffer)
-ExtraDiskSpaceRequired=48318382080
+ExtraDiskSpaceRequired=45000000000
 
 [Files]
-; Main EXE from PyInstaller
 Source: "dist\AIAgent_Internal.exe"; DestDir: "{app}"; Flags: ignoreversion
-; Engine from the 'bin' folder we unzipped in YAML
 Source: "bin\llama-cli.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
 
 [Icons]
@@ -22,7 +18,6 @@ Name: "{group}\AIAgent Pro"; Filename: "{app}\AIAgent_Internal.exe"
 Name: "{autodesktop}\AIAgent Pro"; Filename: "{app}\AIAgent_Internal.exe"
 
 [Run]
-; Download 40GB Brain on the user's PC using BitsTransfer
 Filename: "powershell.exe"; \
     Parameters: "-Command ""& { \
         $dir = 'C:\AI_Data\Models'; \
@@ -30,8 +25,5 @@ Filename: "powershell.exe"; \
         Import-Module BitsTransfer; \
         Start-BitsTransfer -Source 'https://huggingface.co/MaziyarPanahi/Llama-3.1-70B-Instruct-GGUF/resolve/main/Llama-3.1-70B-Instruct-Q4_K_M.gguf' -Destination 'C:\AI_Data\Models\heavy_brain_40gb.gguf'; \
     }"""; \
-    StatusMsg: "Downloading 40GB Intelligence Brain. This is a massive file, please do not close the installer..."; \
+    StatusMsg: "Downloading 40GB Intelligence... This will take time."; \
     Flags: runhidden
-
-[UninstallDelete]
-Type: filesandordirs; Name: "C:\AI_Data\Models"
