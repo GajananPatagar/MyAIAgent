@@ -1,28 +1,21 @@
-name: Build Windows Agent
+name: All-In-One Portable Build
 on: [push]
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install Dependencies
+      - uses: actions/checkout@v4
+      - name: Download Tiny Model
         run: |
-          pip install pyinstaller pyautogui requests Pillow
-
-      - name: Build Executable
+          curl -L -o src/model.gguf https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf
+      
+      - name: Download Engine
         run: |
-          pyinstaller --onefile --noconsole --name "AIAgent" src/main.py
+          curl -L -o src/llama-cli.exe https://github.com/ggerganov/llama.cpp/releases/download/b3000/llama-b3000-bin-win-vulkan-x64.zip
+          # (Script to unzip and move llama-cli.exe to src/ goes here)
 
-      - name: Upload Build
-        uses: actions/upload-artifact@v4
-        with:
-          name: AI-Agent-Windows
-          path: dist/AIAgent.exe
+      - name: Bundle Everything
+        run: |
+          pip install pyinstaller pyautogui Pillow
+          pyinstaller --onefile --noconsole --add-data "src/model.gguf;." --add-data "src/llama-cli.exe;." src/main.py
